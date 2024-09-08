@@ -1,0 +1,174 @@
+{% load static %}
+
+<html>
+    <head>
+        <title>Chatbot</title>
+        <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <style>
+            /* Style for the logout button */
+            .logout-button {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                text-align: center;
+                text-decoration: none;
+            }
+
+            .logout-button:hover {
+                background-color: #0056b3;
+            }
+
+            .welcome-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                margin-top: 100px;
+                text-align: center;
+            }
+
+            .welcome-container h1 {
+                font-size: 2.5rem;
+                background: linear-gradient(to right,#0B8494,#125B9A,#F05A7E,#FFBE98); /* Gradient color */
+                -webkit-background-clip: text; /* Clip background to text */
+                -moz-background-clip: text;    /* For Mozilla Firefox (not fully supported) */
+                background-clip: text;
+                -webkit-text-fill-color: transparent; /* Hide the original text color */
+                margin: 0;
+            }
+
+            .welcome-container h2 {
+                font-size: 1.8rem;
+                background: linear-gradient(to right,#B99470,#A6B37D,#C0C78C); /* Gradient color */
+                -webkit-background-clip: text; /* Clip background to text */
+                -moz-background-clip: text;    /* For Mozilla Firefox (not fully supported) */
+                background-clip: text; 
+                -webkit-text-fill-color: transparent; /* Hide the original text color */
+                margin: 0;
+            }
+
+            .input-container {
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 500px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .input-container input[type="text"] {
+                flex-grow: 4;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+                outline: none;
+            }
+
+            .input-container input[type="file"] {
+                flex-grow: 1;
+                padding: 5px;
+                font-size: 14px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #f8f9fa;
+                max-width: 100px;
+            }
+
+            .input-container button {
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .input-container button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+         <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const form = document.querySelector("form");
+                const chatBox = document.getElementById("chat-box");
+    
+                if (!chatBox) {
+                    console.error('Chat box element not found');
+                    return;
+                }
+    
+                form.addEventListener("submit", function(event) {
+                    event.preventDefault(); // Prevent the default form submission
+    
+                    const formData = new FormData(form);
+                    
+                    fetch("{% url 'blog:process_message' %}", {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "X-CSRFToken": formData.get("csrfmiddlewaretoken")
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.response) {
+                            chatBox.innerHTML += "<p>" + data.response + "</p>";
+                        }
+                        form.reset(); // Clear the form input
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <!-- Logout Button -->
+        {% if user.is_authenticated %}
+        <a href="logout" class="logout-button">Logout</a> 
+        {% else %}
+        <a href="register" class="logout-button">Login or Signup</a> 
+        {% endif %}
+
+        <center>
+            <div class="welcome-container">
+                {% if user.is_authenticated %}
+                <h1>Welcome, {{ user.username }}</h1>
+                <h2>How can I help you today?</h2>
+                {% else %}
+                <h1>Welcome to our page!!</h1>
+                {% endif %}
+            </div>
+        </center>
+
+        <!-- Input Textbox and File Attachment at the Bottom Center -->
+        <center>
+        <h1>Welcome to Chatbot</h1>
+        <div id="chat-box"></div>
+
+        <form method="POST" action="{% url 'blog:process_message' %}">
+        {% csrf_token %}
+      
+        <div class="input-container">
+            <input type="text" placeholder="Type your message..." name="user_message">
+            <input type="file" id="fileUpload" name="file">
+            <button>Send</button>
+        </div>
+        </form>
+        </center>
+        
+    </body>
+</html>
